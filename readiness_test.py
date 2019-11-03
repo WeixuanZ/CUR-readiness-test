@@ -10,20 +10,18 @@ cap.set(3, 720)
 cap.set(4, 1280)
 time.sleep(2.0)
 
-# fgbg = cv2.createBackgroundSubtractorMOG2(history=300,detectShadows=False)
-# fgbg.setBackgroundRatio(0.7)
-
+fgbg = cv2.createBackgroundSubtractorMOG2(history=100,detectShadows=False)
+fgbg.setBackgroundRatio(0.8)
 
 # loop over the frames from the video stream
 while True:
-    # grab the frame from the threaded video stream and resize it
-    # to have a maximum width of 400 pixels
+
 	rect, frame = cap.read()
 
-    # fgmask = fgbg.apply(frame)
+	
 
 	gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    # blur = cv2.GaussianBlur(gray, (5, 5), 0)
+	# blur = cv2.GaussianBlur(gray, (5, 5), 0)
 	blur = cv2.bilateralFilter(gray, 5, 175, 175)
 	edge_detected_image = cv2.Canny(blur, 75, 200)
 	
@@ -38,14 +36,20 @@ while True:
 			contour_list.append(contour)
 
 	# cnts = sorted(contour_list, key=cv2.contourArea, reverse=True)[:5]
+	display = frame.copy()
+	cv2.drawContours(display, contour_list, -1, (0, 255, 0), 2)
 
-	cv2.drawContours(frame, contour_list, -1, (0, 255, 0), 2)
 
-    # show the output frame
-	cv2.imshow("Frame", imutils.resize(frame, width=500))
+	fgmask = fgbg.apply(frame)
+	fg = cv2.bitwise_and(cv2.cvtColor(fgmask, cv2.COLOR_GRAY2RGB),frame)
+	fg_blur = cv2.bilateralFilter(fg, 5, 175, 175)
+
+	# show the output frame
+	cv2.imshow("Frame", imutils.resize(display, width=500))
+	cv2.imshow("Foreground", imutils.resize(fg_blur, width=500))
 
 	key = cv2.waitKey(1) & 0xFF
-    # if the `q` key was pressed, break from the loop
+	# if the `q` key was pressed, break from the loop
 	if key == ord("q"):
 		break
 
