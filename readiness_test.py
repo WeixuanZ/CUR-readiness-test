@@ -3,6 +3,8 @@ import cv2
 import numpy as np
 import imutils
 
+# clustering
+
 # wait for the camera to warm up
 print("[INFO] starting video stream...")
 cap = cv2.VideoCapture(0)
@@ -18,35 +20,33 @@ while True:
 
 	rect, frame = cap.read()
 
-	
+	fgmask = fgbg.apply(frame)
+	kernel = np.ones((5,5),np.uint8)
+	fgmask = cv2.erode(fgmask,kernel,iterations = 1)
+	kernel = np.ones((20,20),np.uint8)
+	fgmask = cv2.dilate(fgmask,kernel,iterations = 1)
 
-	gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-	# blur = cv2.GaussianBlur(gray, (5, 5), 0)
-	blur = cv2.bilateralFilter(gray, 5, 175, 175)
-	edge_detected_image = cv2.Canny(blur, 75, 200)
-	
-	cv2.imshow('Edge', imutils.resize(edge_detected_image, width=500))
+	cv2.imshow("Mask",imutils.resize(fgmask, width=500))
 
-	contours, hierarchy= cv2.findContours(edge_detected_image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+	contours, hierarchy= cv2.findContours(fgmask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 	contour_list = []
 	for contour in contours:
 		approx = cv2.approxPolyDP(contour,0.01*cv2.arcLength(contour,True),True)
 		area = cv2.contourArea(contour)
-		if ((len(approx) > 10) & (area > 30) ):
+		if (area > 500):
 			contour_list.append(contour)
-
-	# cnts = sorted(contour_list, key=cv2.contourArea, reverse=True)[:5]
-	display = frame.copy()
-	cv2.drawContours(display, contour_list, -1, (0, 255, 0), 2)
-
-
-	fgmask = fgbg.apply(frame)
-	fg = cv2.bitwise_and(cv2.cvtColor(fgmask, cv2.COLOR_GRAY2RGB),frame)
-	fg_blur = cv2.bilateralFilter(fg, 5, 175, 175)
+			
+	cnts = sorted(contour_list, key=cv2.contourArea, reverse=True)[:3]
+	
+	try: 
+		for i in cnts:
+			(x, y, w, h) = cv2.boundingRect(i) 
+			cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 3)
+	except IndexError:
+		print('No Motion Detected')
 
 	# show the output frame
-	cv2.imshow("Frame", imutils.resize(display, width=500))
-	cv2.imshow("Foreground", imutils.resize(fg_blur, width=500))
+	cv2.imshow("Frame", imutils.resize(frame, width=500))
 
 	key = cv2.waitKey(1) & 0xFF
 	# if the `q` key was pressed, break from the loop
