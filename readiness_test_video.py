@@ -3,17 +3,15 @@ import cv2
 import numpy as np
 import imutils
 
-# clustering
 
 # wait for the camera to warm up
-print("[INFO] starting video stream...")
-cap = cv2.VideoCapture(0)
-cap.set(3, 720)
-cap.set(4, 1280)
-time.sleep(2.0)
+cap = cv2.VideoCapture('Two disks.mp4')
+# cap.set(3, 720)
+# cap.set(4, 1280)
 
-fgbg = cv2.createBackgroundSubtractorMOG2(history=300,detectShadows=False)
-fgbg.setBackgroundRatio(0.8)
+
+fgbg = cv2.createBackgroundSubtractorMOG2(history=50,detectShadows=False)
+fgbg.setBackgroundRatio(0.9)
 
 # loop over the frames from the video stream
 while True:
@@ -26,9 +24,10 @@ while True:
 
 	cv2.imshow("Raw Mask",imutils.resize(fgmask, width=500))
 
-	kernel = np.ones((5,5),np.uint8)
+	kernel = np.ones((14,14),np.uint8)  
 	fgmask = cv2.erode(fgmask,kernel,iterations = 1)
-	kernel = np.ones((35,35),np.uint8)
+	cv2.imshow("Errosion",imutils.resize(fgmask, width=500))
+	kernel = np.ones((40,40),np.uint8)
 	fgmask = cv2.dilate(fgmask,kernel,iterations = 1)
 	# fgmask = cv2.morphologyEx(fgmask, cv2.MORPH_CLOSE, kernel)
 
@@ -48,7 +47,7 @@ while True:
 	for contour in contours:
 		approx = cv2.approxPolyDP(contour,0.01*cv2.arcLength(contour,True),True)
 		area = cv2.contourArea(contour)
-		if (area > 10000):
+		if (area > 1000):
 			contour_list.append(contour)
 			hull = cv2.convexHull(contour)
 			hull_list.append(hull)
@@ -71,7 +70,7 @@ while True:
 	# show the output frame
 	cv2.imshow("Frame", imutils.resize(frame, width=500))
 
-	key = cv2.waitKey(1) & 0xFF
+	key = cv2.waitKey(25) & 0xFF
 	# if the `q` key was pressed, break from the loop
 	if key == ord("q"):
 		break
